@@ -16,7 +16,7 @@ export class WikiRDSStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    const vpc = new ec2.Vpc(this, 'my-cdk-vpc', {
+    const vpc = new ec2.Vpc(this, 'wiki-vpc', {
       cidr: '10.0.0.0/16',
       natGateways: 0,
       maxAzs: 2,
@@ -79,7 +79,10 @@ export class WikiRDSStack extends cdk.Stack {
     // output a few properties to help us find the credentials 
     new cdk.CfnOutput(this, 'Secret Name', { value: wikiDbCredentialsSecret.secretName }); 
     new cdk.CfnOutput(this, 'Secret ARN', { value: wikiDbCredentialsSecret.secretArn }); 
-    new cdk.CfnOutput(this, 'Secret Full ARN', { value: wikiDbCredentialsSecret.secretFullArn || '' });
+    new cdk.CfnOutput(this, 'Secret Full ARN', {
+        value: wikiDbCredentialsSecret.secretFullArn || '',
+        exportName: 'wikiDbCredentialsSecretFullArn',
+    });
     new cdk.CfnOutput(this, 'dbEndpoint', {
       value: dbInstance.instanceEndpoint.hostname,
     });
@@ -87,8 +90,6 @@ export class WikiRDSStack extends cdk.Stack {
       // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
       value: dbInstance.secret?.secretName!,
     });
-
-
 
   }
 }
