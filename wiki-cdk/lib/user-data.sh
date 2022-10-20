@@ -45,9 +45,6 @@ openssl rand -base64 32 > /etc/wiki/.db-secret
 # Create internal docker network
 docker network create wikinet
 
-# Create data volume for PostgreSQL
-# docker volume create pgdata
-
 # Get DB credentials from SSM and Secrets Manager
 secretARN=$(aws ssm get-parameter --name "/wiki/wiki-rds-credentials-secret-arn" --query "Parameter.Value" --output text)
 secret=$(aws secretsmanager get-secret-value --secret-id $secretARN)
@@ -55,8 +52,6 @@ dbhost=$(aws secretsmanager get-secret-value --secret-id $secretARN| jq --raw-ou
 dbpass=$(aws secretsmanager get-secret-value --secret-id $secretARN| jq --raw-output '.SecretString' | jq -r .password)
 
 # Create the containers
-# docker create --name=db -e POSTGRES_DB=wiki -e POSTGRES_USER=wiki -e POSTGRES_PASSWORD_FILE=/etc/wiki/.db-secret -v /etc/wiki/.db-secret:/etc/wiki/.db-secret:ro -v pgdata:/var/lib/postgresql/data --restart=unless-stopped -h db --network=wikinet postgres:11
-# docker create --name=wiki -e DB_TYPE=postgres -e DB_HOST=db -e DB_PORT=5432 -e DB_PASS_FILE=/etc/wiki/.db-secret -v /etc/wiki/.db-secret:/etc/wiki/.db-secret:ro -e DB_USER=wiki -e DB_NAME=wiki -e UPGRADE_COMPANION=1 --restart=unless-stopped -h wiki --network=wikinet -p 80:3000 -p 443:3443 ghcr.io/requarks/wiki:2
 docker create --name=wiki -e "LETSENCRYPT_DOMAIN=wiki.shariasource.com" -e "LETSENCRYPT_EMAIL=cole_crawford@fas.harvard.edu" -e "SSL_ACTIVE=true" -e DB_TYPE=postgres -e DB_HOST=$dbhost -e DB_PORT=5432 -e DB_PASS=$dbpass -e DB_USER=postgres -e DB_NAME=wikidb -e UPGRADE_COMPANION=1 --restart=unless-stopped -h wiki --network=wikinet -p 80:3000 -p 443:3443 ghcr.io/requarks/wiki:2
 docker create --name=wiki-update-companion -v /var/run/docker.sock:/var/run/docker.sock:ro --restart=unless-stopped -h wiki-update-companion --network=wikinet ghcr.io/requarks/wiki-update-companion:latest
 
@@ -67,6 +62,5 @@ ufw allow https
 ufw --force enable
 
 # Start containers
-# docker start db
 docker start wiki
 docker start wiki-update-companion

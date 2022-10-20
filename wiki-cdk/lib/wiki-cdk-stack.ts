@@ -1,10 +1,9 @@
 import * as cdk from 'aws-cdk-lib';
-import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import {read, readFileSync} from 'fs';
+import {readFileSync} from 'fs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 interface WikiCdkStackProps extends cdk.StackProps {
@@ -50,11 +49,6 @@ export class WikiCdkStack extends cdk.Stack {
       '/aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id',
       { os: ec2.OperatingSystemType.LINUX }
     )
-
-    // const userDataScript = readFileSync('./lib/userdata_rhel.sh', 'utf8');
-    // const machineImage = new ec2.AmazonLinuxImage({
-    //   generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
-    // })
 
     const userData = ec2.UserData.custom(userDataScript);
 
