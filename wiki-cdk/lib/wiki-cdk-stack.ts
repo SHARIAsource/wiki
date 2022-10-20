@@ -4,7 +4,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as rds from 'aws-cdk-lib/aws-rds';
 import * as secretsManager from 'aws-cdk-lib/aws-secretsmanager';
 import * as ssm from 'aws-cdk-lib/aws-ssm';
-import {readFileSync} from 'fs';
+import {read, readFileSync} from 'fs';
 import * as iam from 'aws-cdk-lib/aws-iam';
 
 interface WikiCdkStackProps extends cdk.StackProps {
@@ -46,12 +46,17 @@ export class WikiCdkStack extends cdk.Stack {
     // Simple user data script
     // Sets up some requirements, clones the app repo, runs Ansible playbooks to configure the site
     const userDataScript = readFileSync('./lib/user-data.sh', 'utf8');
-    const userData = ec2.UserData.custom(userDataScript);
-
     const machineImage = ec2.MachineImage.fromSsmParameter(
       '/aws/service/canonical/ubuntu/server/focal/stable/current/amd64/hvm/ebs-gp2/ami-id',
       { os: ec2.OperatingSystemType.LINUX }
     )
+
+    // const userDataScript = readFileSync('./lib/userdata_rhel.sh', 'utf8');
+    // const machineImage = new ec2.AmazonLinuxImage({
+    //   generation: ec2.AmazonLinuxGeneration.AMAZON_LINUX_2,
+    // })
+
+    const userData = ec2.UserData.custom(userDataScript);
 
     const ec2InstanceSG = new ec2.SecurityGroup(this, 'ec2-instance-sg', {
       vpc,
@@ -87,6 +92,9 @@ export class WikiCdkStack extends cdk.Stack {
     });
     wikiVm.connections.allowTo(dbInstance, ec2.Port.tcp(5432), 'allow psql connections from wiki vm');
 
-    // dbInstance.connections.allowFrom(wikiVm, ec2.Port.tcp(5432));
+    let ec2Assoc = new ec2.CfnEIPAssociation(this, "Ec2Association", {
+      allocationId: 'eipalloc-0490f13553d76ae78',
+      instanceId: wikiVm.instanceId
+  });
   }
 }
